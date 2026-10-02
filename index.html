@@ -1,0 +1,542 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f2e9">
+  <title>Estoura! | Desafio-relâmpago</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+    :root {
+      color-scheme: light;
+      --paper: #f4f2e9;
+      --ink: #18231f;
+      --muted: #68746d;
+      --line: #d7d9ce;
+      --green: #c9f36a;
+      --green-dark: #91c62b;
+      --coral: #f16b55;
+      --blue: #526dd6;
+      --white: #fffef9;
+      --mono: 'DM Mono', 'Courier New', monospace;
+      --sans: 'Space Grotesk', 'Trebuchet MS', sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      min-height: 100vh;
+      background-color: var(--paper);
+      background-image: radial-gradient(#bbc2b3 0.7px, transparent 0.7px);
+      background-size: 18px 18px;
+      color: var(--ink);
+      font-family: var(--sans);
+    }
+
+    button, input { font: inherit; }
+    button { color: inherit; }
+    button:focus-visible, input:focus-visible {
+      outline: 3px solid var(--blue);
+      outline-offset: 3px;
+    }
+
+    .shell { width: min(100% - 40px, 1060px); margin: 0 auto; }
+    .topbar {
+      min-height: 78px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--line);
+    }
+    .brand { display: flex; align-items: center; gap: 11px; font-weight: 700; font-size: 20px; }
+    .brand-mark {
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      border: 2px solid var(--ink);
+      border-radius: 50%;
+      background: var(--green);
+      font-family: var(--mono);
+      font-size: 14px;
+    }
+    .top-note { color: var(--muted); font-family: var(--mono); font-size: 11px; text-transform: uppercase; }
+
+    main { padding: 42px 0 64px; }
+    .intro { display: flex; justify-content: space-between; align-items: end; gap: 24px; margin-bottom: 28px; }
+    .eyebrow { color: var(--muted); font: 500 11px var(--mono); letter-spacing: 0; text-transform: uppercase; }
+    h1 { margin: 8px 0 0; font-size: clamp(38px, 7vw, 68px); line-height: .98; letter-spacing: 0; }
+    h1 span { color: var(--coral); }
+    .intro-copy { max-width: 280px; margin: 0 0 4px; color: var(--muted); font-size: 14px; line-height: 1.55; }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 1.25fr) minmax(270px, .75fr);
+      min-height: 500px;
+      border: 1px solid var(--ink);
+      background: var(--white);
+      box-shadow: 7px 7px 0 var(--ink);
+    }
+    .play-area { display: flex; flex-direction: column; justify-content: space-between; min-width: 0; padding: 30px; border-right: 1px solid var(--ink); }
+    .panel-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+    .status-tag { display: inline-flex; align-items: center; gap: 8px; font: 500 11px var(--mono); text-transform: uppercase; }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green-dark); box-shadow: 0 0 0 3px #e8f5d3; }
+    .round-count { color: var(--muted); font: 12px var(--mono); }
+
+    .bomb-stage { display: grid; place-items: center; min-height: 175px; position: relative; }
+    .bomb {
+      position: relative;
+      width: 112px;
+      height: 112px;
+      border: 3px solid var(--ink);
+      border-radius: 50%;
+      background: var(--coral);
+      box-shadow: inset -10px -9px 0 #d75243, 5px 7px 0 var(--ink);
+      transition: transform .2s ease;
+    }
+    .bomb::before {
+      content: '';
+      position: absolute;
+      top: -15px;
+      right: 17px;
+      width: 25px;
+      height: 19px;
+      border: 3px solid var(--ink);
+      border-radius: 4px;
+      background: #f4bd63;
+      transform: rotate(28deg);
+    }
+    .bomb::after {
+      content: '';
+      position: absolute;
+      top: -28px;
+      right: 4px;
+      width: 18px;
+      height: 19px;
+      border-top: 3px solid var(--ink);
+      border-right: 3px solid var(--ink);
+      border-radius: 0 15px 0 0;
+      transform: rotate(13deg);
+    }
+    .spark { position: absolute; top: 4px; right: -20px; color: #f3b735; font: 700 26px var(--mono); }
+    .bomb.is-ticking { animation: tick .48s infinite alternate ease-in-out; }
+    .bomb.is-exploded { animation: burst .5s forwards; }
+    @keyframes tick { from { transform: rotate(-4deg) scale(1); } to { transform: rotate(4deg) scale(1.04); } }
+    @keyframes burst { 40% { transform: scale(1.35) rotate(15deg); } 100% { transform: scale(0); opacity: 0; } }
+
+    .timer-wrap { width: min(100%, 390px); margin: 0 auto; }
+    .timer-label { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 9px; }
+    .timer-label span:first-child { font: 11px var(--mono); color: var(--muted); text-transform: uppercase; }
+    .timer-value { font: 500 24px var(--mono); font-variant-numeric: tabular-nums; }
+    .track { height: 9px; overflow: hidden; border: 1px solid var(--ink); background: #e7e9df; }
+    .track-fill { height: 100%; width: 100%; background: var(--green-dark); transform-origin: left; transition: width .1s linear, background-color .2s; }
+    .track-fill.is-low { background: var(--coral); }
+
+    .question-wrap { width: min(100%, 520px); margin: 24px auto 0; text-align: center; }
+    .question-text { min-height: 58px; margin: 0 0 18px; font-size: clamp(20px, 3vw, 26px); line-height: 1.25; }
+    .answers { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+    .answer-btn {
+      min-height: 48px;
+      padding: 10px 12px;
+      border: 1px solid var(--ink);
+      background: var(--white);
+      cursor: pointer;
+      font-size: 14px;
+      transition: background .15s, transform .15s;
+    }
+    .answer-btn:hover:not(:disabled) { background: var(--green); transform: translateY(-2px); }
+    .answer-btn:disabled { cursor: default; }
+    .answer-btn.is-correct { background: var(--green); }
+    .answer-btn.is-wrong { background: #ffd3c9; }
+    .feedback { min-height: 24px; margin: 12px 0 0; color: var(--muted); font: 12px var(--mono); }
+
+    .side-panel { display: flex; flex-direction: column; padding: 26px 23px; }
+    .side-title { display: flex; justify-content: space-between; align-items: center; padding-bottom: 16px; border-bottom: 1px solid var(--line); }
+    .side-title h2 { margin: 0; font-size: 17px; }
+    .question-total { color: var(--muted); font: 11px var(--mono); }
+    .settings { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 0; border-bottom: 1px solid var(--line); }
+    .settings label { font-size: 13px; }
+    .settings small { display: block; margin-top: 4px; color: var(--muted); font-size: 11px; }
+    .seconds-control { display: flex; align-items: center; gap: 5px; }
+    .step-btn { width: 30px; height: 30px; border: 1px solid var(--line); background: transparent; cursor: pointer; font: 16px var(--mono); }
+    .seconds-value { min-width: 48px; text-align: center; font: 14px var(--mono); }
+    .question-list { display: flex; flex: 1; flex-direction: column; gap: 0; max-height: 226px; overflow-y: auto; }
+    .question-row { display: flex; align-items: center; gap: 9px; min-height: 45px; border-bottom: 1px solid #ecece5; }
+    .question-num { color: var(--green-dark); font: 11px var(--mono); }
+    .question-name { flex: 1; overflow: hidden; color: #3d4942; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+    .remove-btn { width: 28px; height: 28px; border: 0; background: transparent; color: var(--muted); cursor: pointer; font: 16px var(--mono); }
+    .remove-btn:hover { color: var(--coral); }
+    .empty-list { margin: auto 0; padding: 20px 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
+    .side-actions { display: grid; gap: 9px; padding-top: 17px; }
+    .primary-btn, .secondary-btn {
+      min-height: 47px;
+      padding: 11px 14px;
+      border: 1px solid var(--ink);
+      cursor: pointer;
+      font-weight: 700;
+      transition: transform .15s, box-shadow .15s;
+    }
+    .primary-btn { background: var(--green); box-shadow: 3px 3px 0 var(--ink); }
+    .primary-btn:hover:not(:disabled) { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 var(--ink); }
+    .secondary-btn { background: transparent; }
+    .secondary-btn:hover:not(:disabled) { background: #f0f1e9; }
+    button:disabled { cursor: not-allowed; opacity: .48; }
+
+    .screen-game, .screen-result { display: none; }
+    .is-playing .screen-setup, .is-finished .screen-setup { display: none; }
+    .is-playing .screen-game, .is-finished .screen-result { display: flex; }
+    .screen-game, .screen-result { width: 100%; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+    .screen-game .bomb-stage { width: 100%; }
+    .screen-game .question-wrap { margin-top: 8px; }
+    .game-kicker { margin-bottom: 7px; color: var(--muted); font: 11px var(--mono); text-transform: uppercase; }
+    .result-mark { display: grid; place-items: center; width: 78px; height: 78px; margin: 0 auto 18px; border: 2px solid var(--ink); border-radius: 50%; background: var(--green); font: 700 30px var(--mono); }
+    .is-finished[data-result="boom"] .result-mark { background: var(--coral); }
+    .result-title { margin: 0 0 9px; font-size: clamp(28px, 5vw, 42px); }
+    .result-copy { max-width: 350px; margin: 0 auto 22px; color: var(--muted); font-size: 14px; line-height: 1.5; }
+    .result-actions { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+    .result-actions button { min-width: 145px; }
+
+    .modal-backdrop { position: fixed; inset: 0; z-index: 5; display: none; place-items: center; padding: 20px; background: #18231fb8; }
+    .modal-backdrop.is-open { display: grid; }
+    .modal { width: min(100%, 510px); max-height: min(90vh, 720px); overflow: auto; padding: 24px; border: 1px solid var(--ink); background: var(--paper); box-shadow: 7px 7px 0 #111; }
+    .modal-head { display: flex; justify-content: space-between; align-items: start; gap: 12px; margin-bottom: 20px; }
+    .modal-head h2 { margin: 0; font-size: 23px; }
+    .close-btn { width: 32px; height: 32px; border: 1px solid var(--line); background: transparent; cursor: pointer; font-size: 20px; }
+    .field-label { display: block; margin: 15px 0 7px; font-size: 12px; font-weight: 600; }
+    .text-input { width: 100%; min-height: 43px; padding: 10px 11px; border: 1px solid var(--line); border-radius: 0; background: var(--white); color: var(--ink); }
+    .text-input::placeholder { color: #9ba39c; }
+    .choices-heading { display: flex; justify-content: space-between; align-items: baseline; margin-top: 18px; }
+    .choices-heading .field-label { margin: 0 0 8px; }
+    .choices-heading span { color: var(--muted); font: 10px var(--mono); }
+    .choice-row { display: grid; grid-template-columns: 20px 1fr; align-items: center; gap: 8px; margin-top: 8px; }
+    .choice-row input[type="radio"] { accent-color: var(--green-dark); }
+    .choice-row .text-input { min-height: 39px; }
+    .modal-footer { display: flex; justify-content: flex-end; gap: 9px; margin-top: 22px; }
+    .toast { position: fixed; z-index: 8; right: 20px; bottom: 20px; max-width: calc(100% - 40px); padding: 12px 16px; border: 1px solid var(--ink); background: var(--ink); color: white; font-size: 13px; opacity: 0; transform: translateY(8px); pointer-events: none; transition: opacity .2s, transform .2s; }
+    .toast.is-visible { opacity: 1; transform: translateY(0); }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+    @media (max-width: 760px) {
+      .shell { width: min(100% - 28px, 540px); }
+      main { padding-top: 30px; }
+      .intro { align-items: start; flex-direction: column; gap: 12px; }
+      .intro-copy { max-width: 410px; }
+      .workspace { grid-template-columns: 1fr; }
+      .play-area { min-height: 500px; padding: 22px 18px; border-right: 0; border-bottom: 1px solid var(--ink); }
+      .side-panel { padding: 21px 18px; }
+      .screen-game .question-wrap { margin-top: 0; }
+    }
+    @media (max-width: 420px) {
+      .top-note { max-width: 110px; text-align: right; line-height: 1.4; }
+      .answers { grid-template-columns: 1fr; }
+      .answer-btn { min-height: 44px; }
+      .play-area { min-height: 555px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand"><span class="brand-mark" aria-hidden="true">!</span><span>ESTOURO<span style="color:var(--coral)">!</span></span></div>
+      <div class="top-note">Desafio-relâmpago<br>para a sala toda</div>
+    </header>
+
+    <main>
+      <section class="intro" aria-labelledby="page-title">
+        <div><div class="eyebrow">Quiz de alta tensão / edição da turma</div><h1 id="page-title">Pensa rápido.<br><span>Não deixa estourar.</span></h1></div>
+        <p class="intro-copy">Responda antes que o tempo acabe. O professor escolhe as perguntas; a turma encara a contagem.</p>
+      </section>
+
+      <section class="workspace" id="workspace" aria-label="Jogo de perguntas">
+        <div class="play-area" id="playArea">
+          <div class="screen-setup">
+            <div class="panel-head"><span class="status-tag"><span class="status-dot"></span>Pronto para jogar</span><span class="round-count" id="setupCount">0 perguntas</span></div>
+            <div class="bomb-stage" aria-hidden="true"><div class="bomb"><span class="spark">✦</span></div></div>
+            <div class="timer-wrap"><div class="timer-label"><span>Tempo por pergunta</span><span class="timer-value" id="previewTimer">00:15</span></div><div class="track"><div class="track-fill" style="width:100%"></div></div></div>
+            <div class="question-wrap"><p class="question-text">A turma está pronta para o primeiro desafio?</p><p class="feedback">Monte seu quiz e aperte iniciar.</p></div>
+          </div>
+
+          <div class="screen-game" aria-live="polite">
+            <div class="panel-head" style="width:100%"><span class="status-tag"><span class="status-dot"></span>Valendo!</span><span class="round-count" id="roundCount">Pergunta 1 de 1</span></div>
+            <div class="bomb-stage" aria-hidden="true"><div class="bomb is-ticking" id="gameBomb"><span class="spark">✦</span></div></div>
+            <div class="timer-wrap"><div class="timer-label"><span>O tempo está correndo</span><span class="timer-value" id="gameTimer">00:15</span></div><div class="track"><div class="track-fill" id="timerFill"></div></div></div>
+            <div class="question-wrap"><div class="game-kicker" id="gameCategory">Pergunta</div><h2 class="question-text" id="gameQuestion"></h2><div class="answers" id="answerList"></div><p class="feedback" id="gameFeedback" aria-live="polite"></p></div>
+          </div>
+
+          <div class="screen-result" aria-live="polite">
+            <div class="result-mark" id="resultMark" aria-hidden="true">✓</div>
+            <h2 class="result-title" id="resultTitle">Mandou bem!</h2>
+            <p class="result-copy" id="resultCopy"></p>
+            <div class="result-actions"><button class="primary-btn" id="replayBtn" type="button">Jogar de novo</button><button class="secondary-btn" id="editFromResult" type="button">Editar perguntas</button></div>
+          </div>
+        </div>
+
+        <aside class="side-panel" aria-label="Controles do professor">
+          <div class="side-title"><h2>Painel do professor</h2><span class="question-total" id="questionTotal">0 itens</span></div>
+          <div class="settings"><div><label for="secondsValue">Tempo por pergunta</label><small>De 5 a 60 segundos</small></div><div class="seconds-control"><button class="step-btn" id="lessTime" type="button" aria-label="Diminuir tempo">−</button><output class="seconds-value" id="secondsValue">15 s</output><button class="step-btn" id="moreTime" type="button" aria-label="Aumentar tempo">+</button></div></div>
+          <div class="question-list" id="questionList" aria-live="polite"></div>
+          <div class="side-actions"><button class="primary-btn" id="startBtn" type="button">Iniciar partida <span aria-hidden="true">→</span></button><button class="secondary-btn" id="addQuestionBtn" type="button">＋ Adicionar pergunta</button></div>
+        </aside>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="questionModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <form class="modal" id="questionForm">
+      <div class="modal-head"><div><div class="eyebrow">Banco da turma</div><h2 id="modalTitle">Nova pergunta</h2></div><button class="close-btn" id="closeModal" type="button" aria-label="Fechar">×</button></div>
+      <label class="field-label" for="questionInput">Pergunta</label><input class="text-input" id="questionInput" maxlength="180" placeholder="Ex.: Qual é a fórmula da água?" required>
+      <div class="choices-heading"><label class="field-label">Alternativas</label><span>MARQUE A RESPOSTA CERTA</span></div>
+      <div id="choiceFields"></div>
+      <div class="modal-footer"><button class="secondary-btn" id="cancelQuestion" type="button">Cancelar</button><button class="primary-btn" type="submit">Salvar pergunta</button></div>
+    </form>
+  </div>
+  <div class="toast" id="toast" role="status"></div>
+
+  <script>
+    (() => {
+      const storageKey = 'estouro-quiz-v1';
+      const starterQuestions = [
+        { text: 'Qual organela celular é conhecida como a "usina de energia" da célula?', choices: ['Ribossomo', 'Mitocôndria', 'Lisossomo', 'Complexo de Golgi'], answer: 1 },
+        { text: 'Qual é o resultado de 3² + 4²?', choices: ['12', '25', '49', '7'], answer: 1 },
+        { text: 'Em que continente fica o deserto do Saara?', choices: ['Ásia', 'América do Sul', 'África', 'Oceania'], answer: 2 }
+      ];
+      let questions = starterQuestions;
+      let seconds = 15;
+      let currentQuestion = 0;
+      let timerStartedAt = 0;
+      let timerFrame = 0;
+      let lockedAnswer = false;
+      let toastTimeout = 0;
+
+      const $ = (id) => document.getElementById(id);
+      const workspace = $('workspace');
+      const questionList = $('questionList');
+
+      try {
+        const saved = JSON.parse(localStorage.getItem(storageKey) || 'null');
+        if (saved && Array.isArray(saved.questions)) {
+          questions = saved.questions.filter((item) => item && typeof item.text === 'string' && Array.isArray(item.choices) && item.choices.length === 4 && Number.isInteger(item.answer));
+          seconds = Math.max(5, Math.min(60, Number(saved.seconds) || 15));
+        }
+      } catch (_) { /* Mantém perguntas de exemplo se o armazenamento estiver indisponível. */ }
+
+      function persist() {
+        try { localStorage.setItem(storageKey, JSON.stringify({ questions, seconds })); }
+        catch (_) { showToast('Não foi possível salvar neste navegador.'); }
+      }
+
+      function showToast(message) {
+        const toast = $('toast');
+        toast.textContent = message;
+        toast.classList.add('is-visible');
+        clearTimeout(toastTimeout);
+        toastTimeout = setTimeout(() => toast.classList.remove('is-visible'), 2300);
+      }
+
+      function renderQuestions() {
+        questionList.replaceChildren();
+        $('questionTotal').textContent = `${questions.length} ${questions.length === 1 ? 'item' : 'itens'}`;
+        $('setupCount').textContent = `${questions.length} ${questions.length === 1 ? 'pergunta' : 'perguntas'}`;
+        $('startBtn').disabled = questions.length === 0;
+        if (questions.length === 0) {
+          const empty = document.createElement('p');
+          empty.className = 'empty-list';
+          empty.textContent = 'Seu quiz está vazio. Adicione uma pergunta para começar.';
+          questionList.append(empty);
+          return;
+        }
+        questions.forEach((question, index) => {
+          const row = document.createElement('div');
+          row.className = 'question-row';
+          const number = document.createElement('span');
+          number.className = 'question-num';
+          number.textContent = String(index + 1).padStart(2, '0');
+          const title = document.createElement('span');
+          title.className = 'question-name';
+          title.textContent = question.text;
+          title.title = question.text;
+          const remove = document.createElement('button');
+          remove.className = 'remove-btn';
+          remove.type = 'button';
+          remove.setAttribute('aria-label', `Excluir pergunta ${index + 1}`);
+          remove.textContent = '×';
+          remove.addEventListener('click', () => {
+            questions.splice(index, 1);
+            persist();
+            renderQuestions();
+          });
+          row.append(number, title, remove);
+          questionList.append(row);
+        });
+      }
+
+      function setSeconds(next) {
+        seconds = Math.max(5, Math.min(60, next));
+        $('secondsValue').textContent = `${seconds} s`;
+        $('previewTimer').textContent = `00:${String(seconds).padStart(2, '0')}`;
+        persist();
+      }
+
+      function buildChoiceFields() {
+        const container = $('choiceFields');
+        container.replaceChildren();
+        ['A', 'B', 'C', 'D'].forEach((letter, index) => {
+          const row = document.createElement('label');
+          row.className = 'choice-row';
+          const radio = document.createElement('input');
+          radio.type = 'radio';
+          radio.name = 'correctAnswer';
+          radio.value = String(index);
+          radio.required = true;
+          radio.checked = index === 0;
+          radio.setAttribute('aria-label', `Alternativa ${letter} é a correta`);
+          const input = document.createElement('input');
+          input.className = 'text-input';
+          input.name = `choice${index}`;
+          input.maxLength = 90;
+          input.placeholder = `Alternativa ${letter}`;
+          input.required = true;
+          row.append(radio, input);
+          container.append(row);
+        });
+      }
+
+      function openModal() {
+        $('questionForm').reset();
+        buildChoiceFields();
+        $('questionModal').classList.add('is-open');
+        $('questionInput').focus();
+      }
+
+      function closeModal() {
+        $('questionModal').classList.remove('is-open');
+        $('addQuestionBtn').focus();
+      }
+
+      function startGame() {
+        if (questions.length === 0) return;
+        currentQuestion = 0;
+        lockedAnswer = false;
+        workspace.classList.remove('is-finished');
+        workspace.classList.add('is-playing');
+        showQuestion();
+      }
+
+      function showQuestion() {
+        cancelAnimationFrame(timerFrame);
+        lockedAnswer = false;
+        const question = questions[currentQuestion];
+        $('roundCount').textContent = `Pergunta ${currentQuestion + 1} de ${questions.length}`;
+        $('gameQuestion').textContent = question.text;
+        $('gameCategory').textContent = `Desafio ${String(currentQuestion + 1).padStart(2, '0')}`;
+        $('gameFeedback').textContent = '';
+        $('gameBomb').classList.remove('is-exploded');
+        $('gameBomb').classList.add('is-ticking');
+        const answers = $('answerList');
+        answers.replaceChildren();
+        question.choices.forEach((choice, index) => {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'answer-btn';
+          button.textContent = choice;
+          button.addEventListener('click', () => chooseAnswer(index, button));
+          answers.append(button);
+        });
+        timerStartedAt = performance.now();
+        updateTimer();
+      }
+
+      function updateTimer() {
+        const elapsed = (performance.now() - timerStartedAt) / 1000;
+        const remaining = Math.max(0, seconds - elapsed);
+        const fraction = remaining / seconds;
+        $('gameTimer').textContent = `00:${String(Math.ceil(remaining)).padStart(2, '0')}`;
+        $('timerFill').style.width = `${fraction * 100}%`;
+        $('timerFill').classList.toggle('is-low', fraction <= .3);
+        if (remaining <= 0) {
+          finishGame(false);
+          return;
+        }
+        timerFrame = requestAnimationFrame(updateTimer);
+      }
+
+      function chooseAnswer(answer, button) {
+        if (lockedAnswer) return;
+        lockedAnswer = true;
+        const isCorrect = answer === questions[currentQuestion].answer;
+        button.classList.add(isCorrect ? 'is-correct' : 'is-wrong');
+        $('answerList').querySelectorAll('button').forEach((choice) => { choice.disabled = true; });
+        $('gameFeedback').textContent = isCorrect ? 'Boa! Próxima pergunta...' : 'Não foi dessa vez. O relógio continua!';
+        if (isCorrect) {
+          cancelAnimationFrame(timerFrame);
+          setTimeout(() => {
+            currentQuestion += 1;
+            if (currentQuestion === questions.length) finishGame(true);
+            else showQuestion();
+          }, 650);
+        } else {
+          setTimeout(() => {
+            if (!workspace.classList.contains('is-playing')) return;
+            lockedAnswer = false;
+            $('gameFeedback').textContent = '';
+            $('answerList').querySelectorAll('button').forEach((choice) => {
+              choice.disabled = false;
+              choice.classList.remove('is-wrong');
+            });
+          }, 650);
+        }
+      }
+
+      function finishGame(won) {
+        cancelAnimationFrame(timerFrame);
+        workspace.classList.remove('is-playing');
+        workspace.classList.add('is-finished');
+        workspace.dataset.result = won ? 'win' : 'boom';
+        $('gameBomb').classList.remove('is-ticking');
+        $('resultMark').textContent = won ? '✓' : '!';
+        $('resultTitle').textContent = won ? 'Desarmou a bomba!' : 'BOOM! O tempo acabou.';
+        $('resultCopy').textContent = won
+          ? `A turma respondeu às ${questions.length} perguntas dentro do tempo. Partida impecável!`
+          : `A bomba estourou na pergunta ${currentQuestion + 1}. Respira fundo e tenta outra vez!`;
+      }
+
+      $('lessTime').addEventListener('click', () => setSeconds(seconds - 5));
+      $('moreTime').addEventListener('click', () => setSeconds(seconds + 5));
+      $('addQuestionBtn').addEventListener('click', openModal);
+      $('closeModal').addEventListener('click', closeModal);
+      $('cancelQuestion').addEventListener('click', closeModal);
+      $('questionModal').addEventListener('click', (event) => { if (event.target === $('questionModal')) closeModal(); });
+      $('questionForm').addEventListener('submit', (event) => {
+        event.preventDefault();
+        const correct = document.querySelector('input[name="correctAnswer"]:checked');
+        if (!correct) return;
+        const choices = [0, 1, 2, 3].map((index) => document.querySelector(`[name="choice${index}"]`).value.trim());
+        if (new Set(choices).size < 4) { showToast('Use quatro alternativas diferentes.'); return; }
+        questions.push({ text: $('questionInput').value.trim(), choices, answer: Number(correct.value) });
+        persist();
+        renderQuestions();
+        closeModal();
+        showToast('Pergunta adicionada ao quiz.');
+      });
+      $('startBtn').addEventListener('click', startGame);
+      $('replayBtn').addEventListener('click', startGame);
+      $('editFromResult').addEventListener('click', () => {
+        workspace.classList.remove('is-finished', 'is-playing');
+        workspace.dataset.result = '';
+      });
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && $('questionModal').classList.contains('is-open')) closeModal();
+      });
+
+      $('secondsValue').textContent = `${seconds} s`;
+      $('previewTimer').textContent = `00:${String(seconds).padStart(2, '0')}`;
+      renderQuestions();
+    })();
+  </script>
+</body>
+</html>
